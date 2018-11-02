@@ -1,80 +1,104 @@
-import React, { useState, useEffect } from "react";
-import ReactDOM from "react-dom";
-import { useSpring, animated, config } from "react-spring";
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { useSpring, animated, config } from 'react-spring';
 
-import "./styles.css";
+import './styles.css';
 
 function App() {
+  const [draw, setDraw] = useState(false);
+
   return (
     <div className="App">
-      <Drawer />
-      <h1>Hello CodeSandbox</h1>
-      <h2>Start editing to see some magic happen!</h2>
+      <button onClick={() => setDraw(!draw)}>
+        {draw ? 'Close' : 'Open'} Drawer
+      </button>
+      <div className="viewport">
+        <Drawer opened={draw} onDraw={opened => setDraw(opened)}>
+          A good drawer is actionnable through movement and toggle actions
+        </Drawer>
+        <div className="content">
+          <p>
+            This is a demo of the useSpring() hook to make a drawer with
+            gestures
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
-function Drawer() {
+function Drawer({
+  opened = false,
+  onDraw = () =>
+    console.warn(
+      `The drawer won't toggle if you don't change state in the onDraw() prop callback`
+    ),
+  ...props
+}) {
+  // all units in px
+  let HITBOX_SIZE = 15;
+  let DRAWER_SIZE = 320;
+  let BASCULE = 50;
+
+  let _opened = opened;
+  let initialPos = 0;
+  let OPEN_POS = DRAWER_SIZE;
+  let CLOSE_POS = 0;
+
   const [{ draw }, setSpring] = useSpring({
     draw: 0,
     config: config.default
   });
-
-  let opened = false;
-  let isOpening = false;
-  let initialPos = 0;
-  let TRESHOLD = 50;
-  let OPEN_POS = 300;
-  let CLOSE_POS = 0;
+  setSpring({ to: { draw: opened ? OPEN_POS : CLOSE_POS } });
 
   function handleGestureTake({ pageX }) {
-    window.addEventListener("mousemove", handleGestureMove);
-    window.addEventListener("mouseup", handleGestureRelease);
-    console.log(`InitialPos: ${pageX}`);
+    window.addEventListener('mousemove', handleGestureMove);
+    window.addEventListener('touchmove', handleGestureMove);
+    window.addEventListener('mouseup', handleGestureRelease);
+    window.addEventListener('touchend', handleGestureRelease);
     initialPos = pageX;
   }
   function handleGestureMove({ pageX }) {
     const delta = pageX - initialPos;
     let from, to;
-    console.log("opened: ", opened);
 
     if (!opened) {
       from = CLOSE_POS;
       to = delta;
-      if (delta > TRESHOLD) {
-        isOpening = true;
-      }
+      _opened = delta > BASCULE;
     } else {
       from = OPEN_POS;
       to = OPEN_POS + delta;
-      if (delta < -TRESHOLD) {
-        isOpening = false;
-      }
+      _opened = delta > -BASCULE;
     }
 
     setSpring({ from: { draw: from }, to: { draw: to } });
   }
   function handleGestureRelease() {
-    window.removeEventListener("mousemove", handleGestureMove);
-    window.removeEventListener("mouseup", handleGestureRelease);
-    opened = isOpening;
-    setSpring({ to: { draw: opened ? OPEN_POS : CLOSE_POS } });
+    window.removeEventListener('mousemove', handleGestureMove);
+    window.removeEventListener('touchmove', handleGestureMove);
+    window.removeEventListener('mouseup', handleGestureRelease);
+    window.removeEventListener('touchend', handleGestureRelease);
+    onDraw(_opened);
   }
 
   return (
-    <div>
-      <animated.span
-        style={{
-          display: "inline-block",
-          transform: draw.interpolate(d => `translate3d(${d}px, 0, 0)`)
-        }}
-        onMouseDown={handleGestureTake}
-      >
-        Hello
-      </animated.span>
-    </div>
+    <animated.nav
+      style={{
+        transform: draw.interpolate(
+          d =>
+            `translate3d(${
+              d < CLOSE_POS ? CLOSE_POS : d > OPEN_POS ? OPEN_POS : d
+            }px, 0, 0)`
+        )
+      }}
+      onMouseDown={handleGestureTake}
+      onTouchStart={handleGestureTake}
+    >
+      <div className="nav-content">{props.children}</div>
+    </animated.nav>
   );
 }
 
-const rootElement = document.getElementById("root");
+const rootElement = document.getElementById('root');
 ReactDOM.render(<App />, rootElement);

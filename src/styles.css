@@ -38,3 +38,45 @@ body {
   cursor: pointer;
   background: #272727;
 }
+
+.viewport {
+  position: relative;
+  width: 320px;
+  height: 568px;
+  border: 2px solid #999;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.content {
+  padding: 20px;
+}
+
+/* DRAWER STYLES */
+
+nav {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: -100%;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* hitbox handle */
+nav::after {
+  position: absolute;
+  width: 15px;
+  right: -15px;
+  height: 100%;
+  content: ' ';
+  background: rgba(200, 100, 100, 0.6);
+  top: 0;
+  display: block;
+}
+
+.nav-content {
+  background: rgba(240, 240, 240, 1);
+  width: 80%;
+  height: 100%;
+  color: #272727;
+}
