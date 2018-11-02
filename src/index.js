@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { useSpring, animated } from "react-spring";
+import { useSpring, animated, config } from "react-spring";
 
 import "./styles.css";
 
@@ -15,44 +15,65 @@ function App() {
 }
 
 function Drawer() {
-  const { draw, ...gestures } = useGestures();
-  //const [spring] = useSpring({ transform: `translate3d(${draw}px, 0, 0)` });
-
-  console.log("DRAW: ", draw);
-
-  return <animated.div {...gestures}>Hello</animated.div>;
-}
-
-function useGestures() {
-  const [draw, setDraw] = useState(0);
-  const [taken, setTaken] = useState(false);
-
-  useEffect(() => {
-    window.addEventListener("mousemove", handleGestureMove);
-    window.addEventListener("mouseup", handleGestureRelease);
-
-    return () => {
-      window.removeEventListener("mousemove", handleGestureMove);
-      window.removeEventListener("mouseup", handleGestureRelease);
-    };
+  const [{ draw }, setSpring] = useSpring({
+    draw: 0,
+    config: config.default
   });
 
+  let opened = false;
+  let isOpening = false;
+  let initialPos = 0;
+  let TRESHOLD = 50;
+  let OPEN_POS = 300;
+  let CLOSE_POS = 0;
+
   function handleGestureTake({ pageX }) {
-    setTaken(true);
+    window.addEventListener("mousemove", handleGestureMove);
+    window.addEventListener("mouseup", handleGestureRelease);
+    console.log(`InitialPos: ${pageX}`);
+    initialPos = pageX;
   }
   function handleGestureMove({ pageX }) {
-    if (taken) {
-      setDraw(pageX);
+    const delta = pageX - initialPos;
+    let from, to;
+    console.log("opened: ", opened);
+
+    if (!opened) {
+      from = CLOSE_POS;
+      to = delta;
+      if (delta > TRESHOLD) {
+        isOpening = true;
+      }
+    } else {
+      from = OPEN_POS;
+      to = OPEN_POS + delta;
+      if (delta < -TRESHOLD) {
+        isOpening = false;
+      }
     }
+
+    setSpring({ from: { draw: from }, to: { draw: to } });
   }
-  function handleGestureRelease({ pageX }) {
-    setTaken(false);
+  function handleGestureRelease() {
+    window.removeEventListener("mousemove", handleGestureMove);
+    window.removeEventListener("mouseup", handleGestureRelease);
+    opened = isOpening;
+    setSpring({ to: { draw: opened ? OPEN_POS : CLOSE_POS } });
   }
 
-  return {
-    draw,
-    onMouseDown: handleGestureTake
-  };
+  return (
+    <div>
+      <animated.span
+        style={{
+          display: "inline-block",
+          transform: draw.interpolate(d => `translate3d(${d}px, 0, 0)`)
+        }}
+        onMouseDown={handleGestureTake}
+      >
+        Hello
+      </animated.span>
+    </div>
+  );
 }
 
 const rootElement = document.getElementById("root");
