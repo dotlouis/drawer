@@ -8,7 +8,8 @@
     "react": "16.7.0-alpha.0 - next",
     "react-dom": "16.7.0-alpha.0 - next",
     "react-scripts": "2.0.3",
-    "react-spring": "6.1.6"
+    "react-spring": "6.1.6",
+    "react-use-gestures": "^0.1.0"
   },
   "devDependencies": {},
   "scripts": {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useSpring, animated, config } from 'react-spring';
+import { useGestures } from 'react-use-gestures';
 
 import './styles.css';
 
@@ -87,7 +88,7 @@ function Drawer({
   });
   setSpring({ to: { draw: opened ? OPEN_POS : CLOSE_POS } });
   const gestures = useGestures({
-    onMove: ({ pageX, initialX, deltaX }) => {
+    onMove: ({ deltaX }) => {
       let from, to;
 
       if (!opened) {
@@ -148,63 +149,6 @@ function Drawer({
       />
     </>
   );
-}
-
-function useGestures({
-  onTake = () => {},
-  onMove = () => {},
-  onRelease = () => {},
-}) {
-  function handleTouchStart(e) {
-    window.addEventListener('touchmove', handleTouchMove);
-    window.addEventListener('touchend', handleTouchEnd);
-    handleTake(e.touches[0]);
-  }
-
-  function handleTouchMove(e) {
-    handleMove(e.touches[0]);
-  }
-
-  function handleTouchEnd(e) {
-    window.removeEventListener('touchmove', handleTouchMove);
-    window.removeEventListener('touchend', handleTouchEnd);
-    handleRelease(e.touches[0]);
-  }
-
-  function handleMouseDown(e) {
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    handleTake(e);
-  }
-
-  function handleMouseMove(e) {
-    handleMove(e);
-  }
-
-  function handleMouseUp(e) {
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleMouseUp);
-    handleRelease(e);
-  }
-
-  let initialX = 0;
-
-  function handleTake({ pageX }) {
-    initialX = pageX;
-    onTake({ pageX, initialX });
-  }
-  function handleMove({ pageX }) {
-    const deltaX = pageX - initialX;
-    onMove({ pageX, initialX, deltaX });
-  }
-  function handleRelease({ pageX }) {
-    onRelease({ pageX, initialX });
-  }
-
-  return {
-    onMouseDown: handleMouseDown,
-    onTouchStart: handleTouchStart,
-  };
 }
 
 const rootElement = document.getElementById('root');
