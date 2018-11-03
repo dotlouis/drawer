@@ -52,16 +52,19 @@ body {
   padding: 20px;
 }
 
-.overlay {
-  background: rgba(240, 240, 240, 0.3);
-  background: rgba(0, 128, 0, 0.658);
-  position: absolute;
-  top: 0;
-  left: 0;
+.nav-content {
+  background: rgba(240, 240, 240, 1);
   height: 100%;
-  width: 100%;
+  color: #272727;
+  padding: 20px;
 }
 
+.red {
+  color: red;
+}
+.green {
+  color: green;
+}
 /* DRAWER STYLES */
 
 nav {
@@ -70,7 +73,7 @@ nav {
   height: 100%;
 }
 
-.hitbox {
+.handle {
   position: absolute;
   height: 100%;
   content: ' ';
@@ -79,11 +82,11 @@ nav {
   display: block;
 }
 
-/* DRAWER STYLES FROM CONSUMER */
-
-.nav-content {
-  background: rgba(240, 240, 240, 1);
+.overlay {
+  background: rgba(0, 128, 0, 0.658);
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
-  color: #272727;
-  padding: 20px;
+  width: 100%;
 }

@@ -5,7 +5,7 @@ import { useSpring, animated, config } from 'react-spring';
 import './styles.css';
 
 function App() {
-  const [draw, setDraw] = useState(false);
+  const [draw, setDraw] = useState(true);
 
   return (
     <div className="App">
@@ -16,17 +16,42 @@ function App() {
         <Drawer
           opened={draw}
           onDraw={opened => setDraw(opened)}
-          hitboxSize={15}
+          handleSize={10}
           drawerSize={230}
         >
           <div className="nav-content">
-            A good drawer is actionnable through movement and toggle actions
+            <p>
+              A good drawer is actionnable through movement and toggle actions
+            </p>
+            <p>
+              In <span className="green">green</span> the overlay covers the
+              rest of the viewport. You can click on it to close the drawer. Or
+              push it with your mouse/touch.
+            </p>
           </div>
         </Drawer>
         <div className="content">
           <p>
             This is a demo of the useSpring() hook to make a drawer with
             gestures
+          </p>
+          <p>
+            In <span className="red">red</span> the handle to take and pull the
+            drawer
+          </p>
+          <p>
+            The drawer is a fully controlled component. Which means it doesn't
+            keep it's state. You should store its state from a parent component
+            (or context)
+          </p>
+          <p>
+            It also means you <strong>MUST</strong> implement the onDraw() prop
+            by at least seting the drawer state in it.
+          </p>
+          <pre>{`onDraw={opened => setState(opened)}`}</pre>
+          <p>
+            If you don't, you will see a warning and the drawer will refuse to
+            stay open/close
           </p>
         </div>
       </div>
@@ -37,7 +62,7 @@ function App() {
 function Drawer({
   opened = false,
   onDraw = opened => {
-    setSpring({ draw: opened ? CLOSE_POS : OPEN_POS });
+    setSpring({ to: { draw: opened ? CLOSE_POS : OPEN_POS } });
     console.warn(
       `The drawer won't ${
         opened ? 'open' : 'close'
@@ -45,7 +70,7 @@ function Drawer({
     );
   },
   // all units in px
-  hitboxSize = 15,
+  handleSize = 10,
   drawerSize = 250,
   bascule = 50,
   ...props
@@ -112,10 +137,10 @@ function Drawer({
       >
         {props.children}
         <animated.div
-          className="hitbox"
+          className="handle"
           style={{
-            width: hitboxSize,
-            right: -hitboxSize,
+            width: handleSize,
+            right: -handleSize,
             display: draw.interpolate(
               d => (d > DISAPEARING_THRESHOLD ? 'none' : 'block')
             )
