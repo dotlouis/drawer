@@ -13,8 +13,15 @@ function App() {
         {draw ? 'Close' : 'Open'} Drawer
       </button>
       <div className="viewport">
-        <Drawer opened={draw} onDraw={opened => setDraw(opened)}>
-          A good drawer is actionnable through movement and toggle actions
+        <Drawer
+          opened={draw}
+          onDraw={opened => setDraw(opened)}
+          hitboxSize={15}
+          drawerSize={230}
+        >
+          <div className="nav-content">
+            A good drawer is actionnable through movement and toggle actions
+          </div>
         </Drawer>
         <div className="content">
           <p>
@@ -29,21 +36,26 @@ function App() {
 
 function Drawer({
   opened = false,
-  onDraw = () =>
+  onDraw = opened => {
+    setSpring({ draw: opened ? CLOSE_POS : OPEN_POS });
     console.warn(
-      `The drawer won't toggle if you don't change state in the onDraw() prop callback`
-    ),
+      `The drawer won't ${
+        opened ? 'open' : 'close'
+      } if you don't change state in the onDraw() prop callback`
+    );
+  },
+  // all units in px
+  hitboxSize = 15,
+  drawerSize = 250,
+  bascule = 50,
   ...props
 }) {
-  // all units in px
-  let HITBOX_SIZE = 15;
-  let DRAWER_SIZE = 320;
-  let BASCULE = 50;
-
   let _opened = opened;
   let initialPos = 0;
-  let OPEN_POS = DRAWER_SIZE;
+  let OPEN_POS = drawerSize;
   let CLOSE_POS = 0;
+  let DISAPEARING_THRESHOLD = 3;
+  let POINTER_EVENT_THRESHOLD = bascule / drawerSize;
 
   const [{ draw }, setSpring] = useSpring({
     draw: 0,
@@ -65,11 +77,11 @@ function Drawer({
     if (!opened) {
       from = CLOSE_POS;
       to = delta;
-      _opened = delta > BASCULE;
+      _opened = delta > bascule;
     } else {
       from = OPEN_POS;
       to = OPEN_POS + delta;
-      _opened = delta > -BASCULE;
+      _opened = delta > -bascule;
     }
 
     setSpring({ from: { draw: from }, to: { draw: to } });
@@ -83,20 +95,49 @@ function Drawer({
   }
 
   return (
-    <animated.nav
-      style={{
-        transform: draw.interpolate(
-          d =>
-            `translate3d(${
-              d < CLOSE_POS ? CLOSE_POS : d > OPEN_POS ? OPEN_POS : d
-            }px, 0, 0)`
-        )
-      }}
-      onMouseDown={handleGestureTake}
-      onTouchStart={handleGestureTake}
-    >
-      <div className="nav-content">{props.children}</div>
-    </animated.nav>
+    <>
+      <animated.nav
+        style={{
+          width: drawerSize,
+          left: -drawerSize,
+          transform: draw.interpolate(
+            d =>
+              `translate3d(${
+                d < CLOSE_POS ? CLOSE_POS : d > OPEN_POS ? OPEN_POS : d
+              }px, 0, 0)`
+          )
+        }}
+        onMouseDown={handleGestureTake}
+        onTouchStart={handleGestureTake}
+      >
+        {props.children}
+        <animated.div
+          className="hitbox"
+          style={{
+            width: hitboxSize,
+            right: -hitboxSize,
+            display: draw.interpolate(
+              d => (d > DISAPEARING_THRESHOLD ? 'none' : 'block')
+            )
+          }}
+        />
+      </animated.nav>
+      <animated.div
+        className="overlay"
+        style={{
+          opacity: draw.interpolate(d => d / drawerSize),
+          pointerEvents: draw.interpolate(
+            d => (d < POINTER_EVENT_THRESHOLD ? 'none' : 'all')
+          ),
+          display: draw.interpolate(
+            d => (d < DISAPEARING_THRESHOLD ? 'none' : 'block')
+          )
+        }}
+        onClick={() => _opened && onDraw(false)}
+        onMouseDown={e => _opened && handleGestureTake(e)}
+        onTouchStart={e => _opened && handleGestureTake(e)}
+      />
+    </>
   );
 }
 
