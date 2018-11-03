@@ -88,14 +88,42 @@ function Drawer({
   });
   setSpring({ to: { draw: opened ? OPEN_POS : CLOSE_POS } });
 
-  function handleGestureTake({ pageX }) {
-    window.addEventListener('mousemove', handleGestureMove);
-    window.addEventListener('touchmove', handleGestureMove);
-    window.addEventListener('mouseup', handleGestureRelease);
-    window.addEventListener('touchend', handleGestureRelease);
+  function handleTouchStart(e) {
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleTouchEnd);
+    handleTake(e.touches[0]);
+  }
+
+  function handleTouchMove(e) {
+    handleMove(e.touches[0]);
+  }
+
+  function handleTouchEnd(e) {
+    window.removeEventListener('touchmove', handleTouchMove);
+    window.removeEventListener('touchend', handleTouchEnd);
+    handleRelease(e.touches[0]);
+  }
+
+  function handleMouseDown(e) {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    handleTake(e);
+  }
+
+  function handleMouseMove(e) {
+    handleMove(e);
+  }
+
+  function handleMouseUp(e) {
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+    handleRelease(e);
+  }
+
+  function handleTake({ pageX }) {
     initialPos = pageX;
   }
-  function handleGestureMove({ pageX }) {
+  function handleMove({ pageX }) {
     const delta = pageX - initialPos;
     let from, to;
 
@@ -111,11 +139,7 @@ function Drawer({
 
     setSpring({ from: { draw: from }, to: { draw: to } });
   }
-  function handleGestureRelease() {
-    window.removeEventListener('mousemove', handleGestureMove);
-    window.removeEventListener('touchmove', handleGestureMove);
-    window.removeEventListener('mouseup', handleGestureRelease);
-    window.removeEventListener('touchend', handleGestureRelease);
+  function handleRelease() {
     onDraw(_opened);
   }
 
@@ -132,8 +156,8 @@ function Drawer({
               }px, 0, 0)`
           )
         }}
-        onMouseDown={handleGestureTake}
-        onTouchStart={handleGestureTake}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
       >
         {props.children}
         <animated.div
@@ -159,8 +183,8 @@ function Drawer({
           )
         }}
         onClick={() => _opened && onDraw(false)}
-        onMouseDown={e => _opened && handleGestureTake(e)}
-        onTouchStart={e => _opened && handleGestureTake(e)}
+        onMouseDown={e => _opened && handleMouseDown(e)}
+        onTouchStart={e => _opened && handleTouchStart(e)}
       />
     </>
   );
