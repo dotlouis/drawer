@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useSpring, animated, config } from 'react-spring';
 
@@ -66,7 +66,7 @@ function Drawer({
     console.warn(
       `The drawer won't ${
         opened ? 'open' : 'close'
-      } if you don't change state in the onDraw() prop callback`
+      } if you don't change state in the onDraw() prop callback`,
     );
   },
   // all units in px
@@ -76,7 +76,6 @@ function Drawer({
   ...props
 }) {
   let _opened = opened;
-  let initialPos = 0;
   let OPEN_POS = drawerSize;
   let CLOSE_POS = 0;
   let DISAPEARING_THRESHOLD = 3;
@@ -84,10 +83,78 @@ function Drawer({
 
   const [{ draw }, setSpring] = useSpring({
     draw: 0,
-    config: config.default
+    config: config.default,
   });
   setSpring({ to: { draw: opened ? OPEN_POS : CLOSE_POS } });
+  const gestures = useGestures({
+    onMove: ({ pageX, initialX, deltaX }) => {
+      let from, to;
 
+      if (!opened) {
+        from = CLOSE_POS;
+        to = deltaX;
+        _opened = deltaX > bascule;
+      } else {
+        from = OPEN_POS;
+        to = OPEN_POS + deltaX;
+        _opened = deltaX > -bascule;
+      }
+      setSpring({ from: { draw: from }, to: { draw: to } });
+    },
+    onRelease: () => onDraw(_opened),
+  });
+
+  return (
+    <>
+      <animated.nav
+        style={{
+          width: drawerSize,
+          left: -drawerSize,
+          transform: draw.interpolate(
+            d =>
+              `translate3d(${
+                d < CLOSE_POS ? CLOSE_POS : d > OPEN_POS ? OPEN_POS : d
+              }px, 0, 0)`,
+          ),
+        }}
+        {...gestures}
+      >
+        {props.children}
+        <animated.div
+          className="handle"
+          style={{
+            width: handleSize,
+            right: -handleSize,
+            display: draw.interpolate(
+              d => (d > DISAPEARING_THRESHOLD ? 'none' : 'block'),
+            ),
+          }}
+        />
+      </animated.nav>
+      <animated.div
+        className="overlay"
+        style={{
+          opacity: draw.interpolate(d => d / drawerSize),
+          pointerEvents: draw.interpolate(
+            d => (d < POINTER_EVENT_THRESHOLD ? 'none' : 'all'),
+          ),
+          display: draw.interpolate(
+            d => (d < DISAPEARING_THRESHOLD ? 'none' : 'block'),
+          ),
+        }}
+        onClick={() => _opened && onDraw(false)}
+        onMouseDown={e => _opened && gestures.onMouseDown(e)}
+        onTouchStart={e => _opened && gestures.onTouchStart(e)}
+      />
+    </>
+  );
+}
+
+function useGestures({
+  onTake = () => {},
+  onMove = () => {},
+  onRelease = () => {},
+}) {
   function handleTouchStart(e) {
     window.addEventListener('touchmove', handleTouchMove);
     window.addEventListener('touchend', handleTouchEnd);
@@ -120,74 +187,24 @@ function Drawer({
     handleRelease(e);
   }
 
+  let initialX = 0;
+
   function handleTake({ pageX }) {
-    initialPos = pageX;
+    initialX = pageX;
+    onTake({ pageX, initialX });
   }
   function handleMove({ pageX }) {
-    const delta = pageX - initialPos;
-    let from, to;
-
-    if (!opened) {
-      from = CLOSE_POS;
-      to = delta;
-      _opened = delta > bascule;
-    } else {
-      from = OPEN_POS;
-      to = OPEN_POS + delta;
-      _opened = delta > -bascule;
-    }
-
-    setSpring({ from: { draw: from }, to: { draw: to } });
+    const deltaX = pageX - initialX;
+    onMove({ pageX, initialX, deltaX });
   }
-  function handleRelease() {
-    onDraw(_opened);
+  function handleRelease({ pageX }) {
+    onRelease({ pageX, initialX });
   }
 
-  return (
-    <>
-      <animated.nav
-        style={{
-          width: drawerSize,
-          left: -drawerSize,
-          transform: draw.interpolate(
-            d =>
-              `translate3d(${
-                d < CLOSE_POS ? CLOSE_POS : d > OPEN_POS ? OPEN_POS : d
-              }px, 0, 0)`
-          )
-        }}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-      >
-        {props.children}
-        <animated.div
-          className="handle"
-          style={{
-            width: handleSize,
-            right: -handleSize,
-            display: draw.interpolate(
-              d => (d > DISAPEARING_THRESHOLD ? 'none' : 'block')
-            )
-          }}
-        />
-      </animated.nav>
-      <animated.div
-        className="overlay"
-        style={{
-          opacity: draw.interpolate(d => d / drawerSize),
-          pointerEvents: draw.interpolate(
-            d => (d < POINTER_EVENT_THRESHOLD ? 'none' : 'all')
-          ),
-          display: draw.interpolate(
-            d => (d < DISAPEARING_THRESHOLD ? 'none' : 'block')
-          )
-        }}
-        onClick={() => _opened && onDraw(false)}
-        onMouseDown={e => _opened && handleMouseDown(e)}
-        onTouchStart={e => _opened && handleTouchStart(e)}
-      />
-    </>
-  );
+  return {
+    onMouseDown: handleMouseDown,
+    onTouchStart: handleTouchStart,
+  };
 }
 
 const rootElement = document.getElementById('root');
